@@ -34,7 +34,7 @@ class ClusteringHelper {
   }) : assert(list != null);
 
   //After this value the map show the single points without aggregation
-  final double maxZoomForAggregatePoints;
+  double maxZoomForAggregatePoints;
 
   //Database where we performed the queries
   Database database;
