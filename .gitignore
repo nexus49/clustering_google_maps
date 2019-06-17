@@ -3,6 +3,9 @@
 
 .packages
 .pub/
+.settings/
+.project
+.classpath
 
 build/
 ios/.generated/
