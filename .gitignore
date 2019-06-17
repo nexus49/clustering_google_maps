@@ -4,6 +4,7 @@
 .packages
 .pub/
 .settings/
+.vscode/
 .project
 .classpath
 

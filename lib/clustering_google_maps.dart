@@ -71,40 +71,36 @@ class ClusteringHelper {
   List<LatLngAndGeohash> list;
 
   //Call during the editing of CameraPosition
-  //If you want updateMap during the zoom in/out set forceUpdate to true
-  //this is NOT RECCOMENDED
-  onCameraMove(CameraPosition position, {forceUpdate = false}) {
-    _currentZoom = position.zoom;
-    if (forceUpdate) {
-      updateMap();
-    }
+  //This does not update the map. Map Idle is used to update the map
+  onCameraMove(double zoom) {
+    _currentZoom = zoom;
   }
 
   //Call when user stop to move or zoom the map
-  Future<void> onMapIdle() async {
-    updateMap();
+  Future<void> onMapIdle(LatLngBounds visibleRegion) async {
+    updateMap(visibleRegion);
   }
 
-  updateMap() {
+  updateMap(LatLngBounds visibleRegion) {
     if (_currentZoom < maxZoomForAggregatePoints) {
-      updateAggregatedPoints(zoom: _currentZoom);
+      updateAggregatedPoints(visibleRegion, zoom: _currentZoom);
     } else {
       if (showSinglePoint != null) {
         showSinglePoint();
       } else {
-        updatePoints(_currentZoom);
+        updatePoints(visibleRegion);
       }
     }
   }
 
   // Used for update list
   // NOT RECCOMENDED for good performance (SQL IS BETTER)
-  updateData(List<LatLngAndGeohash> newList) {
+  updateData(List<LatLngAndGeohash> newList, LatLngBounds visibleRegion) {
     list = newList;
-    updateMap();
+    updateMap(visibleRegion);
   }
 
-  Future<List<AggregatedPoints>> getAggregatedPoints(double zoom) async {
+  Future<List<AggregatedPoints>> getAggregatedPoints(double zoom, LatLngBounds visibleRegion) async {
     print("loading aggregation");
     int level = 5;
 
@@ -127,6 +123,9 @@ class ClusteringHelper {
     try {
       List<AggregatedPoints> aggregatedPoints;
       if (database != null) {
+        var where = 'WHERE '
+          '$dbLatColumn BETWEEN ${visibleRegion.southwest.latitude} AND ${visibleRegion.northeast.latitude} AND '
+          '$dbLongColumn BETWEEN ${visibleRegion.southwest.longitude} AND ${visibleRegion.northeast.longitude}';
         aggregatedPoints = await DBHelper.getAggregatedPoints(
             database: database,
             dbTable: dbTable,
@@ -134,7 +133,7 @@ class ClusteringHelper {
             dbLongColumn: dbLongColumn,
             dbGeohashColumn: dbGeohashColumn,
             level: level,
-            whereClause: whereClause);
+            whereClause: where);
       } else {
         aggregatedPoints = _retrieveAggregatedPoints(list, List(), level);
       }
@@ -176,8 +175,8 @@ class ClusteringHelper {
     return _retrieveAggregatedPoints(newInputList, resultList, level);
   }
 
-  Future<void> updateAggregatedPoints({double zoom = 0.0}) async {
-    List<AggregatedPoints> aggregation = await getAggregatedPoints(zoom);
+  Future<void> updateAggregatedPoints(LatLngBounds visibleRegion, {double zoom = 0.0}) async {
+    List<AggregatedPoints> aggregation = await getAggregatedPoints(zoom, visibleRegion);
     print("aggregation lenght: " + aggregation.length.toString());
 
     final markers = aggregation.map((a) {
@@ -209,17 +208,20 @@ class ClusteringHelper {
     updateMarkers(markers);
   }
 
-  updatePoints(double zoom) async {
+  updatePoints(LatLngBounds visibleRegion) async {
     print("update single points");
     try {
       List<LatLngAndGeohash> listOfPoints;
       if (database != null) {
+        var where = 'WHERE '
+          '$dbLatColumn BETWEEN ${visibleRegion.southwest.latitude} AND ${visibleRegion.northeast.latitude} AND '
+          '$dbLongColumn BETWEEN ${visibleRegion.southwest.longitude} AND ${visibleRegion.northeast.longitude}';
         listOfPoints = await DBHelper.getPoints(
             database: database,
             dbTable: dbTable,
             dbLatColumn: dbLatColumn,
             dbLongColumn: dbLongColumn,
-            whereClause: whereClause);
+            whereClause: where);
       } else {
         listOfPoints = list;
       }
