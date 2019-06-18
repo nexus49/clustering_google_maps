@@ -14,7 +14,8 @@ dependencies:
   geohash: ^0.2.1
   sqflite: ^1.1.5
   path_provider: ^1.1.0
-  google_maps_flutter: 0.5.16
+  google_maps_flutter:
+    path: ../plugins/packages/google_maps_flutter
   meta: ^1.1.6
 
 dev_dependencies:

@@ -6,6 +6,8 @@ import 'package:geohash/geohash.dart';
 class LatLngAndGeohash {
   final LatLng location;
   String geohash;
+  // Property to  hold any number of additional data elements retrieved from the db.
+  Map<String, dynamic> data;
 
   LatLngAndGeohash(this.location) {
     geohash = Geohash.encode(location.latitude, location.longitude);
@@ -15,6 +17,7 @@ class LatLngAndGeohash {
       : location = LatLng(map['lat'], map['long']) {
     this.geohash =
         Geohash.encode(this.location.latitude, this.location.longitude);
+    this.data = map;
   }
 
   getId() {

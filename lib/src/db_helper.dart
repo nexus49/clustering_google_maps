@@ -45,7 +45,7 @@ class DBHelper {
       String whereClause = ""}) async {
     try {
       var result = await database
-          .rawQuery('SELECT $dbLatColumn as lat, $dbLongColumn as long '
+          .rawQuery('SELECT $dbLatColumn as lat, $dbLongColumn as long, * '
               'FROM $dbTable $whereClause;');
       List<LatLngAndGeohash> points = new List();
       for (Map<String, dynamic> item in result) {

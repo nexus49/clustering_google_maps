@@ -11,17 +11,18 @@ import 'package:meta/meta.dart';
 import 'package:sqflite/sqflite.dart';
 
 class ClusteringHelper {
-  ClusteringHelper.forDB({
-    @required this.dbTable,
-    @required this.dbLatColumn,
-    @required this.dbLongColumn,
-    @required this.dbGeohashColumn,
-    @required this.updateMarkers,
-    this.database,
-    this.maxZoomForAggregatePoints = 13.5,
-    this.bitmapAssetPathForSingleMarker,
-    this.whereClause = "",
-  })  : assert(dbTable != null),
+  ClusteringHelper.forDB(
+      {@required this.dbTable,
+      @required this.dbLatColumn,
+      @required this.dbLongColumn,
+      @required this.dbGeohashColumn,
+      @required this.updateMarkers,
+      this.database,
+      this.maxZoomForAggregatePoints = 13.5,
+      this.bitmapAssetPathForSingleMarker,
+      this.whereClause = "",
+      this.createMarker = createDefaultMarker})
+      : assert(dbTable != null),
         assert(dbGeohashColumn != null),
         assert(dbLongColumn != null),
         assert(dbLatColumn != null);
@@ -67,6 +68,9 @@ class ClusteringHelper {
   //Function for update Markers on Google Map
   Function updateMarkers;
 
+  //Function to create a new Marker
+  Function createMarker;
+
   //List of points for memory clustering
   List<LatLngAndGeohash> list;
 
@@ -100,7 +104,8 @@ class ClusteringHelper {
     updateMap(visibleRegion);
   }
 
-  Future<List<AggregatedPoints>> getAggregatedPoints(double zoom, LatLngBounds visibleRegion) async {
+  Future<List<AggregatedPoints>> getAggregatedPoints(
+      double zoom, LatLngBounds visibleRegion) async {
     print("loading aggregation");
     int level = 5;
 
@@ -124,8 +129,8 @@ class ClusteringHelper {
       List<AggregatedPoints> aggregatedPoints;
       if (database != null) {
         var where = 'WHERE '
-          '$dbLatColumn BETWEEN ${visibleRegion.southwest.latitude} AND ${visibleRegion.northeast.latitude} AND '
-          '$dbLongColumn BETWEEN ${visibleRegion.southwest.longitude} AND ${visibleRegion.northeast.longitude}';
+            '$dbLatColumn BETWEEN ${visibleRegion.southwest.latitude} AND ${visibleRegion.northeast.latitude} AND '
+            '$dbLongColumn BETWEEN ${visibleRegion.southwest.longitude} AND ${visibleRegion.northeast.longitude}';
         aggregatedPoints = await DBHelper.getAggregatedPoints(
             database: database,
             dbTable: dbTable,
@@ -175,8 +180,10 @@ class ClusteringHelper {
     return _retrieveAggregatedPoints(newInputList, resultList, level);
   }
 
-  Future<void> updateAggregatedPoints(LatLngBounds visibleRegion, {double zoom = 0.0}) async {
-    List<AggregatedPoints> aggregation = await getAggregatedPoints(zoom, visibleRegion);
+  Future<void> updateAggregatedPoints(LatLngBounds visibleRegion,
+      {double zoom = 0.0}) async {
+    List<AggregatedPoints> aggregation =
+        await getAggregatedPoints(zoom, visibleRegion);
     print("aggregation lenght: " + aggregation.length.toString());
 
     final markers = aggregation.map((a) {
@@ -214,8 +221,8 @@ class ClusteringHelper {
       List<LatLngAndGeohash> listOfPoints;
       if (database != null) {
         var where = 'WHERE '
-          '$dbLatColumn BETWEEN ${visibleRegion.southwest.latitude} AND ${visibleRegion.northeast.latitude} AND '
-          '$dbLongColumn BETWEEN ${visibleRegion.southwest.longitude} AND ${visibleRegion.northeast.longitude}';
+            '$dbLatColumn BETWEEN ${visibleRegion.southwest.latitude} AND ${visibleRegion.northeast.latitude} AND '
+            '$dbLongColumn BETWEEN ${visibleRegion.southwest.longitude} AND ${visibleRegion.northeast.longitude}';
         listOfPoints = await DBHelper.getPoints(
             database: database,
             dbTable: dbTable,
@@ -226,22 +233,22 @@ class ClusteringHelper {
         listOfPoints = list;
       }
 
-      final Set<Marker> markers = listOfPoints.map((p) {
-        final MarkerId markerId = MarkerId(p.getId());
-        return Marker(
-          markerId: markerId,
-          position: p.location,
-          infoWindow: InfoWindow(
-              title:
-                  "${p.location.latitude.toStringAsFixed(2)},${p.location.longitude.toStringAsFixed(2)}"),
-          icon: bitmapAssetPathForSingleMarker != null
-              ? BitmapDescriptor.fromAsset(bitmapAssetPathForSingleMarker)
-              : BitmapDescriptor.defaultMarker,
-        );
-      }).toSet();
+      final Set<Marker> markers = listOfPoints.map<Marker>(this.createMarker).toSet();
       updateMarkers(markers);
     } catch (ex) {
       print(ex.toString());
     }
   }
+}
+
+Marker createDefaultMarker(LatLngAndGeohash p) {
+  final MarkerId markerId = MarkerId(p.getId());
+  return Marker(
+    markerId: markerId,
+    position: p.location,
+    infoWindow: InfoWindow(
+        title:
+            "${p.location.latitude.toStringAsFixed(2)},${p.location.longitude.toStringAsFixed(2)}"),
+    icon: BitmapDescriptor.defaultMarker,
+  );
 }
