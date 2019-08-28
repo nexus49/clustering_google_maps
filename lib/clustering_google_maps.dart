@@ -21,7 +21,8 @@ class ClusteringHelper {
       this.maxZoomForAggregatePoints = 13.5,
       this.bitmapAssetPathForSingleMarker,
       this.whereClause = "",
-      this.createMarker = createDefaultMarker})
+      this.createMarker = createDefaultMarker,
+      this.onClusterTap})
       : assert(dbTable != null),
         assert(dbGeohashColumn != null),
         assert(dbLongColumn != null),
@@ -70,6 +71,9 @@ class ClusteringHelper {
 
   //Function to create a new Marker
   Function createMarker;
+
+  //Function to be invoked when tapped on a Marker
+  Function onClusterTap;
 
   //List of points for memory clustering
   List<LatLngAndGeohash> list;
@@ -205,10 +209,14 @@ class ClusteringHelper {
       return Marker(
         markerId: markerId,
         position: a.location,
-        infoWindow: InfoWindow(title: a.count.toString()),
+        // infoWindow: InfoWindow(title: a.count.toString()),
         icon: bitmapDescriptor,
-        onTap: () {
-          print("tap marker");
+        onTap: (LatLng position, String markerId) {
+          if(this.onClusterTap != null) {
+            onClusterTap(position,markerId);
+          } else {
+            print("tap marker");
+          }
         },
       );
     }).toSet();
