@@ -25,7 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (widget.list == null) {
       clusteringHelper.database = await AppDatabase.get().getDb();
     }
-    clusteringHelper.updateMap();
+    // clusteringHelper.updateMap();
   }
 
   updateMarkers(Set<Marker> markers) {
@@ -74,9 +74,9 @@ class _HomeScreenState extends State<HomeScreen> {
         onMapCreated: _onMapCreated,
         initialCameraPosition: initialCameraPosition,
         markers: markers,
-        onCameraMove: (newPosition) =>
-            clusteringHelper.onCameraMove(newPosition, forceUpdate: false),
-        onCameraIdle: clusteringHelper.onMapIdle,
+        // onCameraMove: (newPosition) =>
+            // clusteringHelper.onCameraMove(newPosition, forceUpdate: false),
+        // onCameraIdle: clusteringHelper.onMapIdle,
       ),
       floatingActionButton: FloatingActionButton(
         child:
@@ -87,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
             clusteringHelper.whereClause = "WHERE ${FakePoint.dbLat} > 42.6";
           }
           //Force map update
-          clusteringHelper.updateMap();
+          // clusteringHelper.updateMap();
         },
       ),
     );
