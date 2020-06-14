@@ -9,6 +9,7 @@ import 'package:clustering_google_maps/src/lat_lang_geohash.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:meta/meta.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:flutter/painting.dart';
 
 class ClusteringHelper {
   ClusteringHelper.forDB(
@@ -77,6 +78,8 @@ class ClusteringHelper {
 
   //List of points for memory clustering
   List<LatLngAndGeohash> list;
+
+  double devicePixelRatio;
 
   //Call during the editing of CameraPosition
   //This does not update the map. Map Idle is used to update the map
@@ -190,7 +193,7 @@ class ClusteringHelper {
         await getAggregatedPoints(zoom, visibleRegion);
     print("aggregation lenght: " + aggregation.length.toString());
 
-    final markers = aggregation.map((a) {
+    final markers = (await Future.wait(aggregation.map((a) async {
       BitmapDescriptor bitmapDescriptor;
       if (a.count == 1) {
         if (bitmapAssetPathForSingleMarker != null) {
@@ -201,16 +204,18 @@ class ClusteringHelper {
         }
       } else {
         // >1
-        bitmapDescriptor = BitmapDescriptor.fromAsset(a.bitmabAssetName,
-            package: "clustering_google_maps");
+        ImageConfiguration configuration = ImageConfiguration(
+          devicePixelRatio: this.devicePixelRatio
+        );
+        bitmapDescriptor = await BitmapDescriptor.fromAssetImage(configuration, a.bitmabAssetName, package: "clustering_google_maps");
       }
       final MarkerId markerId = MarkerId(a.getId());
 
       return Marker(
         markerId: markerId,
         position: a.location,
-        // infoWindow: InfoWindow(title: a.count.toString()),
         icon: bitmapDescriptor,
+        // infoWindow: InfoWindow(title: a.count.toString()),
         onTap: (LatLng position, String markerId) {
           if(this.onClusterTap != null) {
             onClusterTap(position,markerId);
@@ -219,7 +224,7 @@ class ClusteringHelper {
           }
         },
       );
-    }).toSet();
+    }))).toSet();
     updateMarkers(markers);
   }
 
